@@ -185,6 +185,7 @@ pub struct Stat {
 
 const INODE_CORE_SIZE: usize = 4 * 15;
 
+#[derive(Debug)]
 /// An actual disc metadata entry.
 pub struct Inode {
     pub stat: Stat,
