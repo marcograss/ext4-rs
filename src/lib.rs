@@ -29,7 +29,7 @@ use anyhow::Context;
 use anyhow::Error;
 use bitflags::bitflags;
 use byteorder::{LittleEndian, ReadBytesExt};
-pub use positioned_io2::ReadAt;
+use positioned_io::ReadAt;
 
 mod block_groups;
 mod extents;
@@ -185,8 +185,8 @@ pub struct Stat {
 
 const INODE_CORE_SIZE: usize = 4 * 15;
 
-#[derive(Debug)]
 /// An actual disc metadata entry.
+#[derive(Debug)]
 pub struct Inode {
     pub stat: Stat,
     pub number: u32,
@@ -282,7 +282,8 @@ where
     }
 
     pub fn new_with_options(inner: R, options: &Options) -> Result<SuperBlock<R>, Error> {
-        parse::superblock(inner, options).with_context(|| anyhow!("failed to parse superblock"))
+        Ok(parse::superblock(inner, options)
+            .with_context(|| anyhow!("failed to parse superblock"))?)
     }
 
     /// Load a filesystem entry by inode number.
@@ -323,8 +324,9 @@ where
 
     /// Load the root node of the filesystem (typically `/`).
     pub fn root(&self) -> Result<Inode, Error> {
-        self.load_inode(2)
-            .with_context(|| anyhow!("failed to load root inode"))
+        Ok(self
+            .load_inode(2)
+            .with_context(|| anyhow!("failed to load root inode"))?)
     }
 
     /// Visit every entry in the filesystem in an arbitrary order.
@@ -349,8 +351,11 @@ where
                 let child_node = self
                     .load_inode(entry.inode)
                     .with_context(|| anyhow!("loading {} ({:?})", entry.name, entry.file_type))?;
+
+                let path = std::path::Path::new(path).join(&entry.name);
+
                 if !self
-                    .walk(&child_node, &format!("{}/{}", path, entry.name), visit)
+                    .walk(&child_node, &path.to_string_lossy(), visit)
                     .with_context(|| anyhow!("processing '{}'", entry.name))?
                 {
                     return Ok(false);
@@ -367,7 +372,9 @@ where
     /// Parse a path, and find the directory entry it represents.
     /// Note that "/foo/../bar" will be treated literally, not resolved to "/bar" then looked up.
     pub fn resolve_path(&self, path: &str) -> Result<DirEntry, Error> {
+        let path = path.replace('\\', "/");
         let path = path.trim_end_matches('/');
+
         if path.is_empty() {
             // this is a bit of a lie, but it works..?
             return Ok(DirEntry {
@@ -431,14 +438,14 @@ impl Inode {
     where
         R: ReadAt,
     {
-        TreeReader::new(
+        Ok(TreeReader::new(
             inner,
             self.block_size,
             self.stat.size,
             self.core,
             self.checksum_prefix,
         )
-        .with_context(|| anyhow!("opening inode <{}>", self.number))
+        .with_context(|| anyhow!("opening inode <{}>", self.number))?)
     }
 
     fn enhance<R>(&self, inner: R) -> Result<Enhanced, Error>
