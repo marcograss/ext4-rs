@@ -347,7 +347,7 @@ where
 
     Ok(crate::SuperBlock {
         inner: reader,
-        load_xattrs,
+        _load_xattrs: load_xattrs,
         uuid_checksum,
         groups,
     })

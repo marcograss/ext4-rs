@@ -204,7 +204,7 @@ pub struct Inode {
 #[derive(Debug)]
 pub struct SuperBlock<R> {
     inner: R,
-    load_xattrs: bool,
+    _load_xattrs: bool,
     /// All* checksums are computed after concatenation with the UUID, so we keep that.
     uuid_checksum: Option<u32>,
     groups: block_groups::BlockGroups,
@@ -461,7 +461,7 @@ impl Inode {
             FileType::SymbolicLink => {
                 Enhanced::SymbolicLink(if self.stat.size < u64::try_from(INODE_CORE_SIZE)? {
                     ensure!(
-                        self.flags.is_empty(),
+                        (self.flags & !InodeFlags::NOATIME).is_empty(), // TODO we ignore NOATIME here, does it have consequences?
                         unsupported_feature(format!(
                             "symbolic links may not have flags: {:?}",
                             self.flags
