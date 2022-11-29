@@ -69,7 +69,7 @@ fn all_types() -> Result<()> {
             assert_eq!("Hello, world!\n", s);
 
             assert_eq!(
-                11847456550,
+                11_847_456_550,
                 superblock
                     .load_inode(superblock.resolve_path("future-file").unwrap().inode)
                     .unwrap()

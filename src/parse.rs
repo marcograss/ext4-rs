@@ -656,7 +656,7 @@ fn read_xattrs(
 }
 
 /// This is what the function in the ext4 code does, based on its results. I'm so sorry.
-pub fn ext4_style_crc32c_le(seed: u32, buf: &[u8]) -> u32 {
+#[must_use] pub fn ext4_style_crc32c_le(seed: u32, buf: &[u8]) -> u32 {
     crc::crc32::update(seed ^ (!0), &crc::crc32::CASTAGNOLI_TABLE, buf) ^ (!0u32)
 }
 
@@ -685,20 +685,16 @@ mod tests {
 
         assert_eq!(0xffff_ffffu32, !0);
         // e3069283 is the "standard" test vector that you can Google up.
-        assert_eq!(0x1cf96d7cu32, 0xe3069283u32 ^ !0);
-        assert_crc(0x1cf96d7c, !0, b"123456789");
-        assert_crc(0x58e3fa20, 0, b"123456789");
+        assert_eq!(0x1cf9_6d7c_u32, 0xe306_9283_u32 ^ !0);
+        assert_crc(0x1cf9_6d7c, !0, b"123456789");
+        assert_crc(0x58e3_fa20, 0, b"123456789");
     }
 
     fn assert_crc(ex: u32, seed: u32, input: &[u8]) {
         let ac = ext4_style_crc32c_le(seed, input);
-        if ex != ac {
-            panic!(
-                "CRC didn't match! ex: {:08x}, ac: {:08x}, len: {}",
+        assert!(!(ex != ac), "CRC didn't match! ex: {:08x}, ac: {:08x}, len: {}",
                 ex,
                 ac,
-                input.len()
-            );
-        }
+                input.len());
     }
 }

@@ -222,7 +222,7 @@ impl Time {
     // "We use an encoding that preserves the times for extra epoch"
     // the lower two bits of the extra field are added to the top of the sec field,
     // the remainder are the nsec
-    pub fn from_extra(epoch_secs: i32, extra: Option<u32>) -> Time {
+    #[must_use] pub fn from_extra(epoch_secs: i32, extra: Option<u32>) -> Time {
         let mut epoch_secs = i64::from(epoch_secs);
         match extra {
             None => Time {
