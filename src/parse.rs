@@ -508,7 +508,7 @@ where
         extracted_type: crate::FileType::from_mode(i_mode).ok_or_else(|| {
             unsupported_feature(format!("unexpected file type in mode: {:b}", i_mode))
         })?,
-        file_mode: i_mode & 0b111_111_111_111,
+        file_mode: i_mode & 0b1111_1111_1111,
         uid: u32::from(i_uid) | (u32::from(l_i_uid_high) << 16),
         gid: u32::from(i_gid) | (u32::from(l_i_gid_high) << 16),
         size: u64::from(i_size_lo) | (u64::from(i_size_high) << 32),

@@ -102,7 +102,7 @@ struct Assets {
 fn open_assets() -> Result<Assets> {
     let tempdir = TempDir::new()?;
     let mut tar = std::process::Command::new("tar")
-        .args(&[
+        .args([
             OsStr::new("-C"),
             tempdir.path().as_os_str(),
             OsStr::new("-xz"),

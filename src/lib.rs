@@ -104,7 +104,7 @@ bitflags! {
 }
 
 /// Flag indicating the type of file stored in this inode.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum FileType {
     RegularFile,     // S_IFREG (Regular file)
     SymbolicLink,    // S_IFLNK (Symbolic link)
@@ -250,7 +250,7 @@ impl Time {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Checksums {
     Required,
     Enabled,
@@ -282,8 +282,8 @@ where
     }
 
     pub fn new_with_options(inner: R, options: &Options) -> Result<SuperBlock<R>, Error> {
-        Ok(parse::superblock(inner, options)
-            .with_context(|| anyhow!("failed to parse superblock"))?)
+        parse::superblock(inner, options)
+            .with_context(|| anyhow!("failed to parse superblock"))
     }
 
     /// Load a filesystem entry by inode number.
@@ -324,9 +324,9 @@ where
 
     /// Load the root node of the filesystem (typically `/`).
     pub fn root(&self) -> Result<Inode, Error> {
-        Ok(self
+        self
             .load_inode(2)
-            .with_context(|| anyhow!("failed to load root inode"))?)
+            .with_context(|| anyhow!("failed to load root inode"))
     }
 
     /// Visit every entry in the filesystem in an arbitrary order.
@@ -438,14 +438,14 @@ impl Inode {
     where
         R: ReadAt,
     {
-        Ok(TreeReader::new(
+        TreeReader::new(
             inner,
             self.block_size,
             self.stat.size,
             self.core,
             self.checksum_prefix,
         )
-        .with_context(|| anyhow!("opening inode <{}>", self.number))?)
+        .with_context(|| anyhow!("opening inode <{}>", self.number))
     }
 
     fn enhance<R>(&self, inner: R) -> Result<Enhanced, Error>
