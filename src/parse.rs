@@ -501,7 +501,7 @@ where
         let block = u64::from(i_file_acl_lo) | (u64::from(l_i_file_acl_high) << 32);
 
         xattr_block(&mut xattrs, load_block(block)?, uuid_checksum, block)
-            .with_context(|| anyhow!("loading xattr block {}", block))?
+            .with_context(|| anyhow!("loading xattr block {}", block))?;
     }
 
     let stat = crate::Stat {
