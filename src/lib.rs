@@ -282,8 +282,7 @@ where
     }
 
     pub fn new_with_options(inner: R, options: &Options) -> Result<SuperBlock<R>, Error> {
-        parse::superblock(inner, options)
-            .with_context(|| anyhow!("failed to parse superblock"))
+        parse::superblock(inner, options).with_context(|| anyhow!("failed to parse superblock"))
     }
 
     /// Load a filesystem entry by inode number.
@@ -324,8 +323,7 @@ where
 
     /// Load the root node of the filesystem (typically `/`).
     pub fn root(&self) -> Result<Inode, Error> {
-        self
-            .load_inode(2)
+        self.load_inode(2)
             .with_context(|| anyhow!("failed to load root inode"))
     }
 

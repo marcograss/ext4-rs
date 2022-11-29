@@ -165,21 +165,23 @@ where
         assumption_failed(format!("depth incorrect: {} != {}", expected_depth, depth))
     );
 
-    if !first_level && checksum_prefix.is_some() {
-        let end_of_entries = data.len() - 4;
-        let on_disc = read_le32(&data[end_of_entries..(end_of_entries + 4)]);
-        let computed =
-            crate::parse::ext4_style_crc32c_le(checksum_prefix.unwrap(), &data[..end_of_entries]);
+    if !first_level {
+        if let Some(checksum_prefix) = checksum_prefix {
+            let end_of_entries = data.len() - 4;
+            let on_disc = read_le32(&data[end_of_entries..(end_of_entries + 4)]);
+            let computed =
+                crate::parse::ext4_style_crc32c_le(checksum_prefix, &data[..end_of_entries]);
 
-        ensure!(
-            computed == on_disc,
-            assumption_failed(format!(
-                "extent checksum mismatch: {:08x} != {:08x} @ {}",
-                on_disc,
-                computed,
-                data.len()
-            ),)
-        );
+            ensure!(
+                computed == on_disc,
+                assumption_failed(format!(
+                    "extent checksum mismatch: {:08x} != {:08x} @ {}",
+                    on_disc,
+                    computed,
+                    data.len()
+                ),)
+            );
+        }
     }
 
     if 0 == depth {
