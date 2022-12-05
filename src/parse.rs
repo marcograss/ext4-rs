@@ -656,7 +656,8 @@ fn read_xattrs(
 }
 
 /// This is what the function in the ext4 code does, based on its results. I'm so sorry.
-#[must_use] pub fn ext4_style_crc32c_le(seed: u32, buf: &[u8]) -> u32 {
+#[must_use]
+pub fn ext4_style_crc32c_le(seed: u32, buf: &[u8]) -> u32 {
     crc::crc32::update(seed ^ (!0), &crc::crc32::CASTAGNOLI_TABLE, buf) ^ (!0u32)
 }
 
@@ -692,9 +693,12 @@ mod tests {
 
     fn assert_crc(ex: u32, seed: u32, input: &[u8]) {
         let ac = ext4_style_crc32c_le(seed, input);
-        assert!(!(ex != ac), "CRC didn't match! ex: {:08x}, ac: {:08x}, len: {}",
-                ex,
-                ac,
-                input.len());
+        assert!(
+            !(ex != ac),
+            "CRC didn't match! ex: {:08x}, ac: {:08x}, len: {}",
+            ex,
+            ac,
+            input.len()
+        );
     }
 }
