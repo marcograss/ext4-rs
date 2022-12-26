@@ -18,7 +18,7 @@ edition = "2018"
 repository = "FauxFaux/ext4-rs"
 
 [dependencies]
-anyhow = { version = "1.0.67", features = ["backtrace"] }
+anyhow = { version = "1.0.68", features = ["backtrace"] }
 bitflags = "1"
 byteorder = "1"
 crc = "1"
