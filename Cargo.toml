@@ -26,5 +26,5 @@ positioned-io = "0.3"
 thiserror = "1"
 
 [dev-dependencies]
-bootsector = "0.1"
+bootsector = "0.2"
 tempfile = "3"
