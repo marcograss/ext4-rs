@@ -162,7 +162,7 @@ where
 
     ensure!(
         expected_depth == depth,
-        assumption_failed(format!("depth incorrect: {} != {}", expected_depth, depth))
+        assumption_failed(format!("depth incorrect: {expected_depth} != {depth}"))
     );
 
     if !first_level {
@@ -175,9 +175,7 @@ where
             ensure!(
                 computed == on_disc,
                 assumption_failed(format!(
-                    "extent checksum mismatch: {:08x} != {:08x} @ {}",
-                    on_disc,
-                    computed,
+                    "extent checksum mismatch: {on_disc:08x} != {computed:08x} @ {}",
                     data.len()
                 ),)
             );
@@ -242,7 +240,7 @@ where
 
     ensure!(
         depth <= 5,
-        assumption_failed(format!("initial depth too high: {}", depth))
+        assumption_failed(format!("initial depth too high: {depth}"))
     );
 
     let mut extents = Vec::with_capacity(usize::from(extent_entries) + usize::from(depth) * 200);

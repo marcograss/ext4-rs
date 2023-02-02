@@ -109,8 +109,7 @@ impl BlockGroups {
 
             if free_inodes_count > s_inodes_per_group {
                 return Err(crate::parse_error(format!(
-                    "too many free inodes in group {}: {} > {}",
-                    block, free_inodes_count, s_inodes_per_group
+                    "too many free inodes in group {block}: {free_inodes_count} > {s_inodes_per_group}"
                 )));
             }
 

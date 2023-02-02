@@ -115,7 +115,7 @@ where
 
     ensure!(
         EXT4_SUPER_MAGIC == s_magic,
-        not_found(format!("invalid magic number: {:x}", s_magic))
+        not_found(format!("invalid magic number: {s_magic:x}"))
     );
 
     let s_state = inner.read_u16::<LittleEndian>()?; /* File system state */
@@ -132,8 +132,7 @@ where
     ensure!(
         0 == s_creator_os,
         unsupported_feature(format!(
-            "only support filesystems created on linux, not '{}'",
-            s_creator_os
+            "only support filesystems created on linux, not '{s_creator_os}'"
         ))
     );
 
@@ -158,8 +157,7 @@ where
     let incompatible_features =
         IncompatibleFeature::from_bits(s_feature_incompat).ok_or_else(|| {
             parse_error(format!(
-                "completely unsupported incompatible feature flag: {:b}",
-                s_feature_incompat
+                "completely unsupported incompatible feature flag: {s_feature_incompat:b}"
             ))
         })?;
 
@@ -269,8 +267,7 @@ where
         ensure!(
             s_checksum == expected,
             assumption_failed(format!(
-                "superblock reports checksums supported, but didn't match: {:x} != {:x}",
-                s_checksum, expected
+                "superblock reports checksums supported, but didn't match: {s_checksum:x} != {expected:x}"
             ))
         );
     }
@@ -281,8 +278,7 @@ where
 
         if s_state & S_STATE_UNMOUNTED_CLEANLY == 0 || s_state & S_STATE_ERRORS_DETECTED != 0 {
             return Err(parse_error(format!(
-                "filesystem is not in a clean state: {:b}",
-                s_state
+                "filesystem is not in a clean state: {s_state:b}"
             )));
         }
     }
@@ -306,7 +302,7 @@ where
 
     ensure!(
         1 == s_rev_level,
-        unsupported_feature(format!("rev level {}", s_rev_level))
+        unsupported_feature(format!("rev level {s_rev_level}"))
     );
 
     let group_table_pos = if 1024 == block_size {
@@ -473,8 +469,7 @@ where
             ensure!(
                 expected == computed,
                 assumption_failed(format!(
-                    "full checksum mismatch: on-disc: {:08x} computed: {:08x}",
-                    expected, computed
+                    "full checksum mismatch: on-disc: {expected:08x} computed: {computed:08x}"
                 ))
             );
         } else {
@@ -482,8 +477,7 @@ where
             ensure!(
                 l_i_checksum_lo == short_computed,
                 assumption_failed(format!(
-                    "short checksum mismatch: on-disc: {:04x} computed: {:04x}",
-                    l_i_checksum_lo, short_computed
+                    "short checksum mismatch: on-disc: {l_i_checksum_lo:04x} computed: {short_computed:04x}"
                 ))
             );
         }
@@ -506,7 +500,7 @@ where
 
     let stat = crate::Stat {
         extracted_type: crate::FileType::from_mode(i_mode).ok_or_else(|| {
-            unsupported_feature(format!("unexpected file type in mode: {:b}", i_mode))
+            unsupported_feature(format!("unexpected file type in mode: {i_mode:b}"))
         })?,
         file_mode: i_mode & 0b1111_1111_1111,
         uid: u32::from(i_uid) | (u32::from(l_i_uid_high) << 16),
@@ -522,9 +516,8 @@ where
 
     Ok(ParsedInode {
         stat,
-        flags: crate::InodeFlags::from_bits(i_flags).ok_or_else(|| {
-            unsupported_feature(format!("unrecognised inode flags: {:b}", i_flags))
-        })?,
+        flags: crate::InodeFlags::from_bits(i_flags)
+            .ok_or_else(|| unsupported_feature(format!("unrecognised inode flags: {i_flags:b}")))?,
         core: i_block,
         checksum_prefix,
     })
@@ -566,8 +559,7 @@ fn xattr_block(
         ensure!(
             x_checksum == computed,
             assumption_failed(format!(
-                "xattr block checksum invalid: on-disk: {:08x}, computed: {:08x}",
-                x_checksum, computed
+                "xattr block checksum invalid: on-disk: {x_checksum:08x}, computed: {computed:08x}"
             ))
         );
     }
@@ -575,8 +567,7 @@ fn xattr_block(
     ensure!(
         1 == x_blocks_used,
         unsupported_feature(format!(
-            "must have exactly one xattr block, not {}",
-            x_blocks_used
+            "must have exactly one xattr block, not {x_blocks_used}"
         ))
     );
 
@@ -626,8 +617,7 @@ fn read_xattrs(
                 6 => "security.",
                 7 => "system.",
                 _ => bail!(unsupported_feature(format!(
-                    "unsupported name prefix encoding: {}",
-                    e_name_prefix_magic
+                    "unsupported name prefix encoding: {e_name_prefix_magic}"
                 ))),
             },
             std::str::from_utf8(name_suffix).with_context(|| anyhow!("name is invalid utf-8"))?

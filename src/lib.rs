@@ -404,10 +404,10 @@ where
             if let Some(en) = entries.into_iter().find(|entry| entry.name == name) {
                 Ok(en)
             } else {
-                Err(not_found(format!("component {} isn't there", name)).into())
+                Err(not_found(format!("component {name} isn't there")).into())
             }
         } else {
-            Err(not_found(format!("component {} isn't a directory", name)).into())
+            Err(not_found(format!("component {name} isn't a directory")).into())
         }
     }
 
@@ -535,8 +535,7 @@ impl Inode {
             ensure!(
                 rec_len > 8,
                 unsupported_feature(format!(
-                    "directory record length is too short, {} must be > 8",
-                    rec_len
+                    "directory record length is too short, {rec_len} must be > 8"
                 ))
             );
 
@@ -546,15 +545,14 @@ impl Inode {
             cursor.read_exact(&mut name)?;
             if 0 != child_inode {
                 let name = std::str::from_utf8(&name)
-                    .map_err(|e| parse_error(format!("invalid utf-8 in file name: {}", e)))?;
+                    .map_err(|e| parse_error(format!("invalid utf-8 in file name: {e}")))?;
 
                 dirs.push(DirEntry {
                     inode: child_inode,
                     name: name.to_string(),
                     file_type: FileType::from_dir_hint(file_type).ok_or_else(|| {
                         unsupported_feature(format!(
-                            "unexpected file type in directory: {}",
-                            file_type
+                            "unexpected file type in directory: {file_type}"
                         ))
                     })?,
                 });
@@ -568,8 +566,7 @@ impl Inode {
                     ensure!(
                         expected == computed,
                         assumption_failed(format!(
-                            "directory checksum mismatch: on-disk: {:08x}, computed: {:08x}",
-                            expected, computed
+                            "directory checksum mismatch: on-disk: {expected:08x}, computed: {computed:08x}"
                         ))
                     );
                 }
@@ -585,7 +582,7 @@ impl Inode {
             if read >= total_len {
                 ensure!(
                     read == total_len,
-                    assumption_failed(format!("short read, {} != {}", read, total_len))
+                    assumption_failed(format!("short read, {read} != {total_len}"))
                 );
 
                 ensure!(
