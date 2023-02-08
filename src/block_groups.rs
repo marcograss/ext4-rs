@@ -34,7 +34,7 @@ impl BlockGroups {
         block_size: u32,
         inode_size: u16,
         long_structs: bool,
-    ) -> Result<BlockGroups, Error>
+    ) -> Result<Self, Error>
     where
         R: io::Read + io::Seek,
     {
@@ -108,7 +108,7 @@ impl BlockGroups {
                 || bg_flags & EXT4_BLOCK_GROUP_BLOCKS_UNUSED != 0;
 
             if free_inodes_count > s_inodes_per_group {
-                return Err(crate::parse_error(format!(
+                return Err(crate::parse_error(&format!(
                     "too many free inodes in group {block}: {free_inodes_count} > {s_inodes_per_group}"
                 )));
             }
@@ -128,7 +128,7 @@ impl BlockGroups {
             });
         }
 
-        Ok(BlockGroups {
+        Ok(Self {
             groups,
             inodes_per_group: s_inodes_per_group,
             block_size,
@@ -137,7 +137,7 @@ impl BlockGroups {
     }
 
     pub fn index_of(&self, inode: u32) -> Result<u64, Error> {
-        ensure!(0 != inode, not_found("there is no inode zero"));
+        ensure!(0 != inode, not_found(&"there is no inode zero"));
 
         let inode = inode - 1;
         let group_number = inode / self.inodes_per_group;
@@ -145,7 +145,7 @@ impl BlockGroups {
         let inode_index_in_group = inode % self.inodes_per_group;
         ensure!(
             inode_index_in_group < group.max_inode_number,
-            assumption_failed(format!(
+            assumption_failed(&format!(
                 "inode <{}> number must fit in group: {} is greater than {} for group {}",
                 inode + 1,
                 inode_index_in_group,

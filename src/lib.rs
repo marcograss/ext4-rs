@@ -55,19 +55,19 @@ pub enum ParseError {
     NotFound { reason: String },
 }
 
-fn assumption_failed<S: ToString>(reason: S) -> ParseError {
+fn assumption_failed<S: ToString>(reason: &S) -> ParseError {
     ParseError::AssumptionFailed {
         reason: reason.to_string(),
     }
 }
 
-fn unsupported_feature<S: ToString>(reason: S) -> ParseError {
+fn unsupported_feature<S: ToString>(reason: &S) -> ParseError {
     ParseError::UnsupportedFeature {
         reason: reason.to_string(),
     }
 }
 
-fn not_found<S: ToString>(reason: S) -> ParseError {
+fn not_found<S: ToString>(reason: &S) -> ParseError {
     ParseError::NotFound {
         reason: reason.to_string(),
     }
@@ -132,28 +132,28 @@ pub enum Enhanced {
 }
 
 impl FileType {
-    fn from_mode(mode: u16) -> Option<FileType> {
+    const fn from_mode(mode: u16) -> Option<Self> {
         match mode >> 12 {
-            0x1 => Some(FileType::Fifo),
-            0x2 => Some(FileType::CharacterDevice),
-            0x4 => Some(FileType::Directory),
-            0x6 => Some(FileType::BlockDevice),
-            0x8 => Some(FileType::RegularFile),
-            0xA => Some(FileType::SymbolicLink),
-            0xC => Some(FileType::Socket),
+            0x1 => Some(Self::Fifo),
+            0x2 => Some(Self::CharacterDevice),
+            0x4 => Some(Self::Directory),
+            0x6 => Some(Self::BlockDevice),
+            0x8 => Some(Self::RegularFile),
+            0xA => Some(Self::SymbolicLink),
+            0xC => Some(Self::Socket),
             _ => None,
         }
     }
 
-    fn from_dir_hint(hint: u8) -> Option<FileType> {
+    const fn from_dir_hint(hint: u8) -> Option<Self> {
         match hint {
-            1 => Some(FileType::RegularFile),
-            2 => Some(FileType::Directory),
-            3 => Some(FileType::CharacterDevice),
-            4 => Some(FileType::BlockDevice),
-            5 => Some(FileType::Fifo),
-            6 => Some(FileType::Socket),
-            7 => Some(FileType::SymbolicLink),
+            1 => Some(Self::RegularFile),
+            2 => Some(Self::Directory),
+            3 => Some(Self::CharacterDevice),
+            4 => Some(Self::BlockDevice),
+            5 => Some(Self::Fifo),
+            6 => Some(Self::Socket),
+            7 => Some(Self::SymbolicLink),
             _ => None,
         }
     }
@@ -223,10 +223,10 @@ impl Time {
     // the lower two bits of the extra field are added to the top of the sec field,
     // the remainder are the nsec
     #[must_use]
-    pub fn from_extra(epoch_secs: i32, extra: Option<u32>) -> Time {
+    pub fn from_extra(epoch_secs: i32, extra: Option<u32>) -> Self {
         let mut epoch_secs = i64::from(epoch_secs);
         match extra {
-            None => Time {
+            None => Self {
                 epoch_secs,
                 nanos: None,
             },
@@ -242,7 +242,7 @@ impl Time {
                 epoch_secs += i64::from(extra & epoch_mask) << 32;
 
                 let nanos = (extra & nsec_mask) >> epoch_bits;
-                Time {
+                Self {
                     epoch_secs,
                     nanos: Some(nanos.clamp(0, 999_999_999)),
                 }
@@ -259,7 +259,7 @@ pub enum Checksums {
 
 impl Default for Checksums {
     fn default() -> Self {
-        Checksums::Required
+        Self::Required
     }
 }
 
@@ -273,8 +273,8 @@ where
     R: ReadAt,
 {
     /// Open a filesystem, and load its superblock.
-    pub fn new(inner: R) -> Result<SuperBlock<R>, Error> {
-        SuperBlock::new_with_options(inner, &Options::default())
+    pub fn new(inner: R) -> Result<Self, Error> {
+        Self::new_with_options(inner, &Options::default())
     }
 
     /// Returns inner R, consuming self
@@ -282,7 +282,7 @@ where
         self.inner
     }
 
-    pub fn new_with_options(inner: R, options: &Options) -> Result<SuperBlock<R>, Error> {
+    pub fn new_with_options(inner: R, options: &Options) -> Result<Self, Error> {
         parse::superblock(inner, options).with_context(|| anyhow!("failed to parse superblock"))
     }
 
@@ -401,13 +401,15 @@ where
 
     fn dir_entry_named(&self, inode: &Inode, name: &str) -> Result<DirEntry, Error> {
         if let Enhanced::Directory(entries) = self.enhance(inode)? {
-            if let Some(en) = entries.into_iter().find(|entry| entry.name == name) {
-                Ok(en)
-            } else {
-                Err(not_found(format!("component {name} isn't there")).into())
-            }
+            entries
+                .into_iter()
+                .find(|entry| entry.name == name)
+                .map_or_else(
+                    || Err(not_found(&format!("component {name} isn't there")).into()),
+                    Ok,
+                )
         } else {
-            Err(not_found(format!("component {name} isn't a directory")).into())
+            Err(not_found(&format!("component {name} isn't a directory")).into())
         }
     }
 
@@ -461,7 +463,7 @@ impl Inode {
                 Enhanced::SymbolicLink(if self.stat.size < u64::try_from(INODE_CORE_SIZE)? {
                     ensure!(
                         (self.flags & !InodeFlags::NOATIME).is_empty(), // TODO we ignore NOATIME here, does it have consequences?
-                        unsupported_feature(format!(
+                        unsupported_feature(&format!(
                             "symbolic links may not have flags: {:?}",
                             self.flags
                         ))
@@ -472,7 +474,7 @@ impl Inode {
                 } else {
                     ensure!(
                         self.only_relevant_flag_is_extents(),
-                        unsupported_feature(format!(
+                        unsupported_feature(&format!(
                             "symbolic links may not have non-extent flags: {:?}",
                             self.flags
                         ))
@@ -515,7 +517,7 @@ impl Inode {
             // if the flags, minus irrelevant flags, isn't just EXTENTS...
             ensure!(
                 self.only_relevant_flag_is_extents(),
-                unsupported_feature(format!(
+                unsupported_feature(&format!(
                     "inode with unsupported flags: {0:x} {0:b}",
                     self.flags
                 ))
@@ -534,7 +536,7 @@ impl Inode {
 
             ensure!(
                 rec_len > 8,
-                unsupported_feature(format!(
+                unsupported_feature(&format!(
                     "directory record length is too short, {rec_len} must be > 8"
                 ))
             );
@@ -545,13 +547,13 @@ impl Inode {
             cursor.read_exact(&mut name)?;
             if 0 != child_inode {
                 let name = std::str::from_utf8(&name)
-                    .map_err(|e| parse_error(format!("invalid utf-8 in file name: {e}")))?;
+                    .map_err(|e| parse_error(&format!("invalid utf-8 in file name: {e}")))?;
 
                 dirs.push(DirEntry {
                     inode: child_inode,
                     name: name.to_string(),
                     file_type: FileType::from_dir_hint(file_type).ok_or_else(|| {
-                        unsupported_feature(format!(
+                        unsupported_feature(&format!(
                             "unexpected file type in directory: {file_type}"
                         ))
                     })?,
@@ -565,7 +567,7 @@ impl Inode {
                         parse::ext4_style_crc32c_le(checksum_prefix, &cursor.into_inner()[0..read]);
                     ensure!(
                         expected == computed,
-                        assumption_failed(format!(
+                        assumption_failed(&format!(
                             "directory checksum mismatch: on-disk: {expected:08x}, computed: {computed:08x}"
                         ))
                     );
@@ -582,13 +584,13 @@ impl Inode {
             if read >= total_len {
                 ensure!(
                     read == total_len,
-                    assumption_failed(format!("short read, {read} != {total_len}"))
+                    assumption_failed(&format!("short read, {read} != {total_len}"))
                 );
 
                 ensure!(
                     self.checksum_prefix.is_none(),
                     assumption_failed(
-                        "directory checksums are enabled but checksum record not found"
+                        &"directory checksums are enabled but checksum record not found"
                     )
                 );
 
@@ -649,6 +651,6 @@ fn read_lei32(from: &[u8]) -> i32 {
     LittleEndian::read_i32(from)
 }
 
-fn parse_error(msg: String) -> Error {
+fn parse_error(msg: &String) -> Error {
     assumption_failed(msg).into()
 }

@@ -35,17 +35,17 @@ where
         size: u64,
         core: [u8; crate::INODE_CORE_SIZE],
         checksum_prefix: Option<u32>,
-    ) -> Result<TreeReader<R>, Error> {
+    ) -> Result<Self, Error> {
         let extents = load_extent_tree(
             &mut |block| crate::load_disc_bytes(&inner, block_size, block),
             core,
             checksum_prefix,
         )?;
-        Ok(TreeReader::create(inner, block_size, size, extents))
+        Ok(Self::create(inner, block_size, size, extents))
     }
 
-    fn create(inner: R, block_size: u32, size: u64, extents: Vec<Extent>) -> TreeReader<R> {
-        TreeReader {
+    fn create(inner: R, block_size: u32, size: u64, extents: Vec<Extent>) -> Self {
+        Self {
             pos: 0,
             len: size,
             inner,
@@ -129,7 +129,7 @@ where
             io::SeekFrom::Current(diff) => self.pos = (self.pos as i64 + diff) as u64,
             io::SeekFrom::End(set) => {
                 assert!(set >= 0);
-                self.pos = self.len - u64::try_from(set).unwrap()
+                self.pos = self.len - u64::try_from(set).unwrap();
             }
         }
 
@@ -152,7 +152,7 @@ where
 {
     ensure!(
         0x0a == data[0] && 0xf3 == data[1],
-        assumption_failed("invalid extent magic")
+        assumption_failed(&"invalid extent magic")
     );
 
     let extent_entries = read_le16(&data[2..]);
@@ -162,7 +162,7 @@ where
 
     ensure!(
         expected_depth == depth,
-        assumption_failed(format!("depth incorrect: {expected_depth} != {depth}"))
+        assumption_failed(&format!("depth incorrect: {expected_depth} != {depth}"))
     );
 
     if !first_level {
@@ -174,7 +174,7 @@ where
 
             ensure!(
                 computed == on_disc,
-                assumption_failed(format!(
+                assumption_failed(&format!(
                     "extent checksum mismatch: {on_disc:08x} != {computed:08x} @ {}",
                     data.len()
                 ),)
@@ -231,7 +231,7 @@ where
 {
     ensure!(
         0x0a == core[0] && 0xf3 == core[1],
-        assumption_failed("invalid extent magic")
+        assumption_failed(&"invalid extent magic")
     );
 
     let extent_entries = read_le16(&core[2..]);
@@ -240,7 +240,7 @@ where
 
     ensure!(
         depth <= 5,
-        assumption_failed(format!("initial depth too high: {depth}"))
+        assumption_failed(&format!("initial depth too high: {depth}"))
     );
 
     let mut extents = Vec::with_capacity(usize::from(extent_entries) + usize::from(depth) * 200);
