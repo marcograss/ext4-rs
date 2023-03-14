@@ -19,7 +19,7 @@ repository = "FauxFaux/ext4-rs"
 
 [dependencies]
 anyhow = { version = "1.0.69", features = ["backtrace"] }
-bitflags = "1"
+bitflags = "2"
 byteorder = "1"
 crc = "1"
 positioned-io = "0.3"

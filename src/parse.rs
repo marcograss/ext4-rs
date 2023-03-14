@@ -57,6 +57,7 @@ bitflags! {
 }
 
 bitflags! {
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     struct IncompatibleFeature: u32 {
        const COMPRESSION    = 0x0001;
        const FILETYPE       = 0x0002;
