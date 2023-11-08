@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::convert::TryInto;
+use std::hash::Hasher;
 use std::io;
 use std::io::Read;
 use std::io::Seek;
@@ -650,7 +652,10 @@ fn read_xattrs(
 /// This is what the function in the ext4 code does, based on its results. I'm so sorry.
 #[must_use]
 pub fn ext4_style_crc32c_le(seed: u32, buf: &[u8]) -> u32 {
-    crc::crc32::update(seed ^ (!0), &crc::crc32::CASTAGNOLI_TABLE, buf) ^ (!0u32)
+    let mut h = crc32c::Crc32cHasher::new(seed ^ (!0));
+    h.write(buf);
+    // hashing is 32 so it will be u32
+    h.finish().try_into().unwrap_or(u32::MAX) ^ (!0)
 }
 
 #[cfg(test)]
